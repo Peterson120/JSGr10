@@ -1,0 +1,270 @@
+/*need to add more inside walls, add collision with walls, and stop ball from changing direction if ball is in motion, add better interface (character selection, start menu, instructions), ?add water*/
+
+var ball = new Circle(10);
+var x = 0;
+var y = 0;
+var background;
+var hole;
+var count = 0;
+var vertical_rectangle;
+var horizontal_rectangle;
+var horizontal_walls;
+var vertical_walls;
+var score;
+var score_circle;
+var how_to_play;
+var close;
+var rectangle;
+
+//set beginning items
+function start(){
+//green background
+    background = new Rectangle(getWidth(),getHeight());
+	background.setColor(Color.green);
+	add(background);
+	
+//adds walls
+	walls();
+	
+//your character
+	var image = new WebImage("https://codehs.com/uploads/a16cebb278e0cd14ada0bc1ae614d507");
+	image.setPosition(image.getWidth()+vertical_walls.getWidth(),horizontal_walls.getHeight());
+	image.setSize(50,50);
+	add(image);
+	
+	how_to_play = new WebImage("https://codehs.com/uploads/69ca38eb8f05c9097b97f38dd5b91b2b");
+	how_to_play.setSize(25,25);
+	how_to_play.setPosition(getWidth()-how_to_play.getWidth()-vertical_walls.getWidth(),0+horizontal_walls.getHeight());
+	add(how_to_play);
+	
+//text
+	var text = new Text("YOU","10pt Limelight");
+	text.setPosition(image.getX()+image.getWidth()/2-text.getWidth()/2,image.getY()+image.getHeight()+text.getHeight());
+	text.setColor("#FFD700");
+	add(text);
+	
+//sets score and adds white background
+	score_circle = new Circle(20);
+	score_circle.setPosition(image.getX()+image.getWidth()+score_circle.getWidth()/2+10,image.getY()+image.getHeight()/2);
+	score_circle.setColor(Color.white);
+	add(score_circle);
+	
+	score = new Text(count,"20pt Limelight");
+	score.setPosition(score_circle.getX()-score.getWidth()/2,score_circle.getY()+score.getHeight()/2-3);
+	add(score);
+	
+//sets ball parameters
+	ball.setPosition(getWidth()-80,getHeight()-80);
+	ball.setColor(Color.white);
+	
+//adds hole and puts in in left or right position(randomized)
+	hole = new Circle(15);
+	var hole_position = Randomizer.nextInt(1,2);
+	if(hole_position == 1){
+	    hole.setPosition(getWidth()/4,getHeight()/4);
+	}else{
+	    hole.setPosition(getWidth()-getWidth()/4,getHeight()/4);
+	}
+	add(hole);
+	
+//adds flag over hole
+	var flag = new WebImage("https://codehs.com/uploads/ef8f4786667fd0ad7a809737f541b1d0");
+	flag.setSize(25,50);
+	flag.setPosition(hole.getX(),hole.getY()-flag.getHeight());
+	add(flag);
+	
+	add(ball);
+	
+	mouseClickMethod(info);
+	mouseDragMethod(move);
+}
+
+function info(e){
+    var elem = getElementAt(e.getX(),e.getY());
+    if(elem == how_to_play){
+        remove(vertical_rectangle);
+        remove(horizontal_rectangle);
+        remove(how_to_play);
+        remove(ball);
+        
+        close = new WebImage("https://codehs.com/uploads/66717b486c745c85accf7ebce590dfb3");
+        close.setSize(25,25);
+        close.setPosition(how_to_play.getX(),how_to_play.getY());
+        add(close);
+
+        rectangle = new Rectangle(getWidth() - 100, getHeight()/3);
+        rectangle.setPosition(getWidth()/2-rectangle.getWidth()/2,getHeight()/2-rectangle.getHeight()/2);
+        rectangle.setColor(Color.white);
+        add(rectangle);
+    }
+    
+    if(elem == close){
+        remove(close);
+        remove(rectangle);
+        add(ball);
+        add(how_to_play);
+        add(vertical_rectangle);
+        add(horizontal_rectangle);
+    }
+}
+
+function draw(){
+	checkWalls();
+	ball.move(x, y);
+}
+
+function checkWalls(){
+//checks if ball is over hole
+    if(ball.getX() >= hole.getX() - hole.getRadius()  && ball.getX() <= hole.getX() + hole.getRadius()){
+        if(ball.getY() >= hole.getY() - hole.getRadius() && ball.getY() <= hole.getY() + hole.getRadius()){
+            stopTimer(draw);
+            removeAll();
+            if(count == 1){
+                var congrats = new Text("HOLE IN ONE!", "20pt Arial");
+                congrats.setPosition(getWidth()/2 - congrats.getWidth()/2, getHeight()/2 - congrats.getHeight()/2);
+                add(congrats);
+            }else{
+                var congrats = new Text("Congratulations you finished in " + count + " strokes.", "10pt Arial");
+                congrats.setPosition(getWidth()/2 - congrats.getWidth()/2, getHeight()/2 - congrats.getHeight()/2);
+                add(congrats);
+            }
+        }
+    }
+    
+//slows ball down
+    //rounds x and y to 2 decimals to prevent ball from drifting
+    var x_rounded = x.toFixed(2);
+    var y_rounded = y.toFixed(2);
+    //first if will prevent ball curve
+    if(y_rounded == 0 && x_rounded == 0.01){
+        x += 0.01;
+    }else if(x_rounded != 0){
+        if(x_rounded < 0){
+            x += 0.02;
+        }else if(x_rounded > 0){
+            x -= 0.02;
+        }
+    }
+    
+    if(y_rounded != 0){
+        if(x_rounded == 0 && y_rounded == 0.01){
+            y += 0.01;
+        }else if(y_rounded < 0){
+            y += 0.02;
+        }else if(y_rounded > 0){
+            y -= 0.02;
+        }
+    }
+    
+// Bounce off right wall
+	if(ball.getX() + ball.getRadius() > getWidth() - vertical_walls.getWidth()){
+		x = -x;
+	}
+	
+// Bounce off left wall
+	if(ball.getX() - ball.getRadius() < 0 + vertical_walls.getWidth()){
+		x = -x;
+	}
+	
+// Bounce off bottom wall
+	if(ball.getY() + ball.getRadius() > getHeight() - horizontal_walls.getHeight()){
+		y = -y;
+	}
+	
+// Bounce off top wall
+	if(ball.getY() - ball.getRadius() < 0 + horizontal_walls.getHeight()){
+		y = -y;
+	}
+}
+
+//checks direction of ball and sets it on opposite path of mouse drag
+function move(e){
+    stopTimer(draw);
+    
+//checks mouse position and sets ball.move speed accordingly
+    if(e.getX() <= ball.getX()){
+        x = (ball.getX() - e.getX())/20;
+    }
+    
+    if(e.getX() >= ball.getX()){
+        x = (ball.getX() - e.getX())/20;
+    }
+    
+    if(e.getY() <= ball.getY()){
+        y = (ball.getY() - e.getY())/20;
+    }
+    
+    if(e.getY() >= ball.getY()){
+        y = (ball.getY() - e.getY())/20;
+    }
+    
+//max speed
+    if(x >= 5){
+        x = 5;
+    }
+    
+    if(y >= 5){
+        y = 5;
+    }
+    
+    if(x <= -5){
+        x = -5;
+    }
+    
+    if(y <= -5){
+        y = -5;
+    }
+
+//sets timer and score after mouse button is lifted
+    mouseUpMethod(mouseUp);
+}
+
+function mouseUp(e){
+//counts up and sets new score position and text
+    count++;
+    score.setText(count);
+    score.setPosition(score_circle.getX()-score.getWidth()/2,score_circle.getY()+score.getHeight()/2-3);
+    setTimer(draw,1);
+}
+
+//to be tested
+//currently not working
+function ball_move(){
+    if(x == 0 && y == 0){
+        return false;
+    }
+    return true;
+}
+
+//puts side walls and middle walls
+function walls(){
+    var hy = 0;
+    var vx = 0;
+    
+    for(var i = 0; i < 2; i++){
+        horizontal_walls = new Rectangle(getWidth(),getHeight()/60);
+	    horizontal_walls.setColor(Color.white);
+	    horizontal_walls.setPosition(0,hy);
+	    add(horizontal_walls);
+	    hy = getHeight() - horizontal_walls.getHeight(); 
+    }
+	
+	for(i=0; i < 2; i++){
+	    vertical_walls = new Rectangle(getWidth()/60,getHeight());
+	    vertical_walls.setPosition(vx,0);
+	    vertical_walls.setColor(Color.white);
+	    add(vertical_walls);
+	    vx = getWidth() - vertical_walls.getWidth(); 
+	}
+	
+    horizontal_rectangle = new Rectangle(Randomizer.nextInt(100,200),10);
+	horizontal_rectangle.setColor(Color.white);
+	horizontal_rectangle.setPosition(Randomizer.nextInt(0 + horizontal_rectangle.getWidth(),getWidth() - horizontal_rectangle.getWidth()),Randomizer.nextInt(getHeight()/3, getHeight()-getHeight()/3));
+	add(horizontal_rectangle);
+	
+
+	vertical_rectangle = new Rectangle(10,Randomizer.nextInt(100,200));
+	vertical_rectangle.setColor(Color.white);
+	vertical_rectangle.setPosition(Randomizer.nextInt(getWidth()/3,getWidth()-getWidth()/3),Randomizer.nextInt(0 + vertical_rectangle.getHeight(),getHeight() - vertical_rectangle.getHeight()));
+	add(vertical_rectangle);
+}
